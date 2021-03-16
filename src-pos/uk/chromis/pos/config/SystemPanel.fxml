@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+<?import uk.chromis.custom.controls.LabeledColourPicker?>
+<?import uk.chromis.custom.controls.LabeledTextField?>
+<?import uk.chromis.custom.controls.LabeledToggleSwitch?>
+
+<AnchorPane id="AnchorPane" prefHeight="497.0" prefWidth="752.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="uk.chromis.pos.config.SystemPanelController">
+   <children>
+      <Separator layoutX="168.0" layoutY="145.0" prefHeight="4.0" prefWidth="580.0" />
+      <Label fx:id="general" layoutX="43.0" layoutY="139.0" prefHeight="17.0" prefWidth="120.0" text="Start Up Screen">
+         <font>
+            <Font name="System Bold" size="12.0" />
+         </font>
+      </Label>
+      <Separator layoutX="10.0" layoutY="146.0" prefHeight="0.0" prefWidth="28.0" />
+      <Separator layoutX="172.0" layoutY="20.0" prefHeight="4.0" prefWidth="580.0" />
+      <Label fx:id="autologoffpanel" layoutX="47.0" layoutY="14.0" prefHeight="17.0" prefWidth="120.0" text="Start Up Screen">
+         <font>
+            <Font name="System Bold" size="12.0" />
+         </font>
+      </Label>
+      <Separator layoutX="14.0" layoutY="21.0" prefHeight="0.0" prefWidth="28.0" />
+      <LabeledToggleSwitch fx:id="enableAutoLogoff" layoutX="16.0" layoutY="37.0" />
+      <LabeledToggleSwitch fx:id="inactivityTimer" layoutX="69.0" layoutY="60.0" />
+      <LabeledToggleSwitch fx:id="autologoffAfterSale" layoutX="69.0" layoutY="85.0" />
+      <LabeledToggleSwitch fx:id="autoLogoffAfterKitchen" layoutX="69.0" layoutY="110.0" />
+      <LabeledToggleSwitch fx:id="autoLogoffToTables" layoutX="411.0" layoutY="86.0" />
+      <LabeledToggleSwitch fx:id="autoLogoffAfterPrint" layoutX="411.0" layoutY="110.0" />
+      <LabeledTextField fx:id="autoLogoffTime" layoutX="408.0" layoutY="60.0" />
+      <LabeledToggleSwitch fx:id="marineOpt" layoutX="16.0" layoutY="160.0" />
+      <LabeledToggleSwitch fx:id="taxIncluded" layoutX="266.0" layoutY="160.0" />
+      <LabeledToggleSwitch fx:id="consolidate" layoutX="516.0" layoutY="160.0" />
+      <LabeledToggleSwitch fx:id="textOverlay" layoutX="16.0" layoutY="185.0" />
+      <LabeledToggleSwitch fx:id="price00" layoutX="266.0" layoutY="185.0" />
+      <LabeledToggleSwitch fx:id="disableDefaultProduct" layoutX="516.0" layoutY="185.0" />
+      <LabeledToggleSwitch fx:id="closeCashbtn" layoutX="16.0" layoutY="210.0" />
+      <LabeledToggleSwitch fx:id="moveAMountBoxToTop" layoutX="266.0" layoutY="210.0" />
+      <LabeledToggleSwitch fx:id="changeSalesScreen" layoutX="516.0" layoutY="210.0" />
+      <LabeledToggleSwitch fx:id="updatedbprice" layoutX="16.0" layoutY="235.0" />
+      <LabeledToggleSwitch fx:id="categoiesBynumber" layoutX="266.0" layoutY="235.0" />
+      <LabeledToggleSwitch fx:id="longNames" layoutX="516.0" layoutY="235.0" />
+      <LabeledToggleSwitch fx:id="customSounds" layoutX="16.0" layoutY="260.0" />
+      <LabeledToggleSwitch fx:id="roundTicketline" layoutX="266.0" layoutY="260.0" />
+      <LabeledToggleSwitch fx:id="maxChangeEnable" layoutX="16.0" layoutY="285.0" />
+      <LabeledTextField fx:id="maxChange" layoutX="266.0" layoutY="285.0" />
+      <Spinner fx:id="tableDays" layoutX="17.0" layoutY="319.0" prefHeight="25.0" prefWidth="52.0" />
+      <Label fx:id="retainLabel" layoutX="78.0" layoutY="320.0" prefHeight="25.0" prefWidth="360.0" text="Label" />
+      <Spinner fx:id="ticketLineSize" layoutX="17.0" layoutY="409.0" prefHeight="25.0" prefWidth="52.0" />
+      <Label fx:id="ticketLinesLabel" layoutX="79.0" layoutY="409.0" prefHeight="25.0" prefWidth="360.0" text="Label" />
+      <Separator layoutX="168.0" layoutY="392.0" prefHeight="4.0" prefWidth="580.0" />
+      <Label fx:id="ticketLines" layoutX="43.0" layoutY="386.0" prefHeight="17.0" prefWidth="120.0" text="Ticket lines">
+         <font>
+            <Font name="System Bold" size="12.0" />
+         </font>
+      </Label>
+      <Separator layoutX="10.0" layoutY="393.0" prefHeight="0.0" prefWidth="28.0" />
+      <LabeledColourPicker fx:id="normalMessage" layoutX="15.0" layoutY="431.0" prefHeight="25.0" visible="false" />
+      <LabeledColourPicker fx:id="waitingMessage" layoutX="256.0" layoutY="431.0" prefHeight="25.0" visible="false" />
+      <LabeledColourPicker fx:id="sentMessage" layoutX="497.0" layoutY="431.0" prefHeight="25.0" visible="false" />
+      <Label fx:id="colouredLineMessage" layoutX="17.0" layoutY="406.0" prefHeight="17.0" prefWidth="360.0" text="Label" visible="false" />
+      <Spinner fx:id="removedLineDays" layoutX="18.0" layoutY="354.0" prefHeight="25.0" prefWidth="52.0" />
+      <Label fx:id="removedLinesLabel" layoutX="79.0" layoutY="355.0" prefHeight="25.0" prefWidth="360.0" text="Label" />
+   </children>
+</AnchorPane>

@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd
+        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <property name="boolean.type" value="boolean" dbms="derby, postgresql"/>
+    <property name="boolean.type" value="bit" dbms="mysql"/>
+   
+    <property name="blob.type" value="blob" dbms="derby"/>
+    <property name="blob.type" value="bytea" dbms="postgresql"/>
+    <property name="blob.type" value="mediumblob" dbms="mysql"/>
+     
+    <changeSet author="Chromis Pos DE" id="Add Money-Fields to CLOSEDCASH">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists columnName="MONEYSTART" tableName="CLOSEDCASH"/>
+            </not>
+        </preConditions>
+
+        <addColumn tableName="CLOSEDCASH">           
+            <column name="MONEYSTART" type="double precision" defaultValueNumeric="0.0"/>
+            <column name="MONEYEND" type="double precision" defaultValueNumeric="0.0"/>
+            <column name="MONEYDIFFERENCE" type="double precision" defaultValueNumeric="0.0"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="Chromis Pos DE" id="Create Table CLOSEDCASH_COUNT">       
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="CLOSEDCASH_COUNT"/>
+            </not>
+        </preConditions> 
+
+        <createTable tableName="CLOSEDCASH_COUNT">
+            <column name="MONEY" type="varchar(255)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="VALUE" type="double precision">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="COUNT" type="int" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SFLAG" type="${boolean.type}" defaultValueBoolean="true" >
+                <constraints nullable="false"/>
+            </column>   
+            <column name="SITEGUID" type="varchar(50)" >
+                <constraints nullable="false" />            
+            </column>
+        </createTable>
+        <modifySql dbms="mysql">
+            <append value=" ENGINE = InnoDB DEFAULT CHARSET=utf8  "/>
+        </modifySql>
+    </changeSet>
+
+    <changeSet author="Chromis Pos DE" id="Set CLOSEDCASH_COUNT siteguid default mysql" dbms="mysql" >
+        <customChange class="uk.chromis.pos.dbmanager.SetDefaultSiteGUID" >           
+            <param name="table" value="CLOSEDCASH_COUNT" /> 
+            <param name="dbtype" value="MySQL" /> 
+        </customChange>        
+    </changeSet> 
+ 
+    <changeSet author="Chromis Pos DE" id="Create Closedcash_Count foreignkey (MS)" dbms="mysql">
+        <sql>ALTER TABLE CLOSEDCASH_COUNT ADD CONSTRAINT CLOSEDCASH_COUNT_FK_1 FOREIGN KEY (MONEY, SITEGUID) REFERENCES CLOSEDCASH (MONEY, SITEGUID)</sql>
+    </changeSet> 
+                                            
+    <changeSet author="Chromis Pos DE" id="Add TSE-Columns to RECEIPTS">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists columnName="GV_TYP" tableName="RECEIPTS"/>
+            </not>
+        </preConditions>
+
+        <addColumn tableName="RECEIPTS">           
+            <column name="TSE_LOGTIME_START" type="int"/>
+            <column name="TSE_LOGTIME_END" type="int"/>
+            <column name="TSE_SERIALNUMBER" type="varchar(255)"/>
+            <column name="TSE_SIGNATURECOUNTER" type="int"/>
+            <column name="TSE_SIGNATUREVALUE" type="varchar(255)"/>
+            <column name="TSE_TRANSACTIONNUMBER" type="int"/>
+            <column name="TSE_TIMEFORMAT" type="varchar(20)"/>
+            <column name="TSE_HASHALGORYTHMUS" type="varchar(50)"/>
+            <column name="TSE_STATUS" type="varchar(50)"/>
+            <column name="TSE_PUBLICKEY" type="varchar(255)"/>
+            <column name="GV_TYP" type="varchar(50)"/>                    
+        </addColumn> 
+    </changeSet>
+                      
+    <changeSet author="Chromis Pos DE" id="Add TSE-Columns to SITES">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists columnName="TSE_ADMINPIN" tableName="SITES"/>
+            </not>
+        </preConditions>
+
+        <addColumn tableName="SITES">           
+            <column name="TSE_ADMINPIN" type="varchar(20)"/>
+            <column name="TSE_TIMEADMINPIN" type="varchar(20)"/>
+        </addColumn>
+    </changeSet>
+                                                                                                                                                                                
+    <changeSet author="Chromis Pos DE" id="Add TSE-Columns to TAXCATEGORIES">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists columnName="TSE_TAXCAT" tableName="TAXCATEGORIES"/>
+            </not>
+        </preConditions>
+
+        <addColumn tableName="TAXCATEGORIES">           
+            <column name="TSE_TAXCAT" type="int"/>
+        </addColumn>
+    </changeSet>
+                                                                                                                                                                                
+    <changeSet author="Chromis Pos DE" id="Add TSE-Columns to TAXLINES">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists columnName="TSE_TAXCAT" tableName="TAXLINES"/>
+            </not>
+        </preConditions>
+
+        <addColumn tableName="TAXLINES">           
+            <column name="TSE_TAXCAT" type="int"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="Chromis Pos DE" id="Add TerminalSerial to CLOSEDCASH">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists columnName="TERMINALSERIAL" tableName="CLOSEDCASH"/>
+            </not>
+        </preConditions>
+
+        <addColumn tableName="CLOSEDCASH">           
+            <column name="TERMINALSERIAL" type="varchar(32)"/>
+        </addColumn>
+    </changeSet>
+    
+    
+    <changeSet author="Chromis Pos DE" id="Update Menu.Root for 0.96.0">   
+        <update tableName="RESOURCES">
+            <column name="CONTENT" valueBlobResource="/uk/chromis/pos/templates/Menu.Root.txt"/>
+            <where>ID='0'</where>
+        </update>
+    </changeSet>
+
+    <changeSet author="Chromis Pos DE" id="Add Permissions for TSE">   
+        <insert tableName="DBPERMISSIONS">
+            <column name="CLASSNAME" value="uk.chromis.pos.tse.TseInitPanel"/>
+            <column name="SECTION" value="##label.sectionmaintenance"/>
+            <column name="DISPLAYNAME" value="##label.displayname147"/>
+            <column name="DESCRIPTION" value="##label.description147"/>
+        </insert>
+        <insert tableName="DBPERMISSIONS">
+            <column name="CLASSNAME" value="uk.chromis.pos.tse.TseExportPanel"/>
+            <column name="SECTION" value="##label.sectionmaintenance"/>
+            <column name="DISPLAYNAME" value="##label.displayname148"/>
+            <column name="DESCRIPTION" value="##label.description148"/>
+        </insert>
+    </changeSet> 
+
+    <changeSet author="Chromis Pos DE" id="Add Permissions for TSE2">   
+        <sql>UPDATE DBPERMISSIONS SET USERDEFINED=false WHERE CLASSNAME in ('uk.chromis.pos.tse.TseInitPanel','uk.chromis.pos.tse.TseExportPanel')</sql>
+    </changeSet>
+  
+    <changeSet author="Chromis Pos DE" id="Update to Chromis version to v0.96.0 build 2010-24">    
+        <update tableName="APPLICATIONS">
+            <column name="VERSION" value="0.96.0 build 2010-24"/>   
+            <column name="VERSIONINT" valueNumeric="20201024"/>         
+            <column name="NAME" value="Chromis Pos DE"/>
+        </update>  
+    </changeSet> 
+    
+</databaseChangeLog>

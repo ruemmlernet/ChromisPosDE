@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import uk.chromis.custom.controls.LabeledComboBox?>
+<?import uk.chromis.custom.controls.LabeledTextField?>
+
+<AnchorPane id="AnchorPane" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="uk.chromis.pos.config.TsePanelController">
+    <children>
+        <Button fx:id="btnLibrary" layoutX="585.0" layoutY="60.0" mnemonicParsing="false" onAction="#handleSelectLibFile" prefHeight="25.0" prefWidth="46.0" style="-fx-border-radius: 10 10 10 10, 10 10 10 10; -fx-background-radius: 16;" />
+        <Button id="btn" fx:id="btnTestConnection" layoutX="240.0" layoutY="96.0" mnemonicParsing="false" onAction="#handleTestConnection" prefHeight="45.0" prefWidth="121.0" style="-fx-border-radius: 10; -fx-background-radius: 55;" text="Check TSE" />
+        <LabeledComboBox fx:id="tseDetails" layoutX="18.0" layoutY="30.0" />
+        <LabeledTextField fx:id="tseLib" layoutX="18.0" layoutY="60.0" />
+    </children>
+</AnchorPane>

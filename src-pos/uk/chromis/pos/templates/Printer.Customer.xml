@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+
+   Copyright (c) 2020 Juergen Ruemmler IT-Solutions, Huenxe, Germany
+
+
+   Chromis POS is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Chromis POS is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with Chromis POS.  If not, see <http://www.gnu.org/licenses/>.
+
+-->
+<output>
+	
+    <ticket>
+	<image>Printer.Ticket.Logo</image>
+	<line></line>
+
+	<line><text align="center" length="42">Chromis POS</text></line>
+	<line><text align="center" length="42">The New Face of Open source POS</text></line>
+	<line><text align="center" length="42">Copyright (c) (c) 2015-2016Chromis</text></line>
+	<line><text align="center" length="42">Printer.Customer</text></line>
+        <line></line>
+	   
+        <line>
+            <text align="left" length="10">Kunde:</text>
+            <text>${customer.getFirstname()} ${customer.getLastname()}</text>
+        </line>
+
+        <qrcode size="200">${customer.getCard()}</qrcode>
+    </ticket>
+
+</output>
