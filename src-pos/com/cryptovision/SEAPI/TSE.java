@@ -43,6 +43,7 @@ import com.cryptovision.SEAPI.exceptions.ErrorSECommunicationFailed;
 import com.cryptovision.SEAPI.exceptions.ErrorSecureElementDisabled;
 import com.cryptovision.SEAPI.exceptions.ErrorTSEResponseDataInvalid;
 import com.cryptovision.SEAPI.exceptions.SEException;
+import java.io.Serializable;
 
 /**
  * TR-03151 Secure Element API
@@ -354,11 +355,12 @@ public abstract class TSE {
 	/**
 	 * common fields in xxxTransaction return values
 	 */
-	static class TransactionResult {
-		public long logTime;			/**< time logged by the CSP */
-		public byte[] serialNumber;		/**< signature key serial number */
-		public long signatureCounter;	/**< signature counter */
-		public byte[] signatureValue;   /**< signature */
+	public static class TransactionResult implements Serializable {
+            private static final long serialVersionUID = 5986907958584408006L;
+            public long logTime;		/**< time logged by the CSP */
+            public byte[] serialNumber;	/**< signature key serial number */
+            public long signatureCounter;	/**< signature counter */
+            public byte[] signatureValue;   /**< signature */
 	}
 
 	/**
