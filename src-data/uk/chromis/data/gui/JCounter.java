@@ -62,7 +62,7 @@ public class JCounter extends JPanel implements BrowseListener, StateListener  {
     public void updateIndex(int iIndex, int iCounter) {
 
         if (iIndex >= 0 && iIndex < iCounter) {
-            jlblIndex.setText(Formats.INT.formatValue(new Integer(iIndex + 1)));
+            jlblIndex.setText(Formats.INT.formatValue(iIndex + 1));
         } else {
             jlblIndex.setText("-");
         }
