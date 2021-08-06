@@ -22,6 +22,8 @@
  */
 package uk.chromis.pos.ticket;
 
+import com.cryptovision.SEAPI.TSE.FinishTransactionResult;
+import com.cryptovision.SEAPI.TSE.StartTransactionResult;
 import java.io.ByteArrayInputStream;
 import java.io.Externalizable;
 import java.io.IOException;
@@ -39,6 +41,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JOptionPane;
+import org.bouncycastle.util.encoders.Hex;
 import uk.chromis.basic.BasicException;
 import uk.chromis.data.loader.DataRead;
 import uk.chromis.data.loader.LocalRes;
@@ -46,6 +52,7 @@ import uk.chromis.data.loader.SerializableRead;
 import uk.chromis.format.Formats;
 import uk.chromis.pos.customers.CustomerInfoExt;
 import uk.chromis.pos.forms.AppConfig;
+import uk.chromis.pos.forms.DataLogicSales;
 import uk.chromis.pos.payment.PaymentInfo;
 import uk.chromis.pos.payment.PaymentInfoMagcard;
 import uk.chromis.pos.tse.TseProcessData;
@@ -82,16 +89,15 @@ public final class TicketInfo implements SerializableRead, Externalizable {
     private UserInfo m_sharedticketUser;
     private String m_nosc;
     private String layawayCustomerName = "";
-    private long tseLogTimeStart;
-    private long tseLogTimeEnd;
-    private String tseSerialNumber;
-    private long tseSignatureCounter;
-    private String tseSignatureValue;
-    private long tseTransactionNumber;
     private String tseTimeFormat;
     private String tseHashAlgorythmus;
     private String tseStatus;
     private String tsePublicKey;
+    private String tillSerialNumber;
+    private StartTransactionResult str;
+    private FinishTransactionResult ftr;
+    private String abrechnungskreis;
+    private Boolean autoTseTransactions = true;
 
     private static String Hostname;
 
@@ -125,7 +131,10 @@ public final class TicketInfo implements SerializableRead, Externalizable {
         multiply = 0.0;
         m_sharedticket = false;
         m_nosc = "0";
-
+        
+        str = null;
+        ftr = null;
+        abrechnungskreis = "";
     }
 
     @Override
@@ -140,6 +149,8 @@ public final class TicketInfo implements SerializableRead, Externalizable {
         out.writeObject(m_aLines);
         out.writeObject(m_CouponLines);
         out.writeObject(m_nosc);
+        out.writeObject(str);
+        out.writeObject(ftr);
     }
 
     @Override
@@ -154,6 +165,11 @@ public final class TicketInfo implements SerializableRead, Externalizable {
         m_aLines = (List<TicketLineInfo>) in.readObject();
         m_CouponLines = (CouponSet) in.readObject();
         m_nosc = (String) in.readObject();
+        try {
+            str = (StartTransactionResult) in.readObject();
+            ftr = (FinishTransactionResult) in.readObject();
+        } catch (IOException e) {
+        }
         m_sActiveCash = null;
         payments = new ArrayList<>();
         taxes = null;
@@ -223,6 +239,9 @@ public final class TicketInfo implements SerializableRead, Externalizable {
 
         t.m_CouponLines = new CouponSet();
         t.m_CouponLines.copyAll(m_CouponLines);
+
+        t.str = str;
+        t.ftr = ftr;
 
         t.refreshLines();
 
@@ -304,12 +323,19 @@ public final class TicketInfo implements SerializableRead, Externalizable {
                            long signatureCounter, String signatureValue, long transactionNumber,
                            String timeFormat, String hashAlgorythmus, String status,
                            String publicKey) {
-        tseLogTimeStart = logTimeStart;
-        tseLogTimeEnd = logTimeEnd;
-        tseSerialNumber = serialNumber;
-        tseSignatureCounter = signatureCounter;
-        tseSignatureValue = signatureValue;
-        tseTransactionNumber = transactionNumber;
+        if (str == null) {
+            str = new StartTransactionResult();
+        }
+        if (ftr == null) {
+            ftr = new FinishTransactionResult();
+        }
+        str.logTime = logTimeStart;
+        ftr.logTime = logTimeEnd;
+        tillSerialNumber = serialNumber;
+        ftr.signatureCounter = signatureCounter;
+        ftr.signatureValue = Hex.decode(signatureValue);
+//        ftr.signatureValue = signatureValue.getBytes();
+        str.transactionNumber = transactionNumber;
         tseTimeFormat = timeFormat;
         tseHashAlgorythmus = hashAlgorythmus;
         tseStatus = status;
@@ -317,7 +343,7 @@ public final class TicketInfo implements SerializableRead, Externalizable {
     }
     
     public long getTseTransactionNumber() {
-        return tseTransactionNumber;
+        return str.transactionNumber;
     }
     
     public String printTseTransactionNumber() {
@@ -325,23 +351,35 @@ public final class TicketInfo implements SerializableRead, Externalizable {
 }
     
     public long getTseLogTimeStart() {
-        return tseLogTimeStart;
+        return str.logTime;
     }
     
     public String printTseLogTimeStart() {
-        return TseProcessData.dateFormat(tseLogTimeStart*1000);
+        if (str != null) {
+            return TseProcessData.dateFormat(str.logTime * 1000);
+        } else {
+            return "";
+        }
     }
     
     public long getTseLogTimeEnd() {
-        return tseLogTimeEnd;
+        return ftr.logTime;
     }
     
     public String printTseLogTimeEnd() {
-        return TseProcessData.dateFormat(tseLogTimeEnd*1000);
+        if (ftr != null) {
+            return TseProcessData.dateFormat(ftr.logTime * 1000);
+        } else {
+            return "";
+        }
     }
     
     public String getTseSerialNumber() {
-        return tseSerialNumber;
+        return Hex.toHexString(str.serialNumber);
+    }
+    
+    public String printTillSerialNumber() {
+        return tillSerialNumber;
     }
     
     public String printTseSerialNumber() {
@@ -365,7 +403,7 @@ public final class TicketInfo implements SerializableRead, Externalizable {
     }
     
     public long getTseSignatureCounter() {
-        return tseSignatureCounter;
+        return ftr.signatureCounter;
     }
     
     public String printTseSignatureCounter() {
@@ -373,7 +411,7 @@ public final class TicketInfo implements SerializableRead, Externalizable {
     }
     
     public String getTseSignatureValue() {
-        return tseSignatureValue;
+        return Hex.toHexString(ftr.signatureValue == null ? str.signatureValue : ftr.signatureValue);
     }
     
     public String printTseSignatureValue() {
@@ -394,6 +432,19 @@ public final class TicketInfo implements SerializableRead, Externalizable {
         } else {
             return "";
         }
+    }
+    
+    public void setAutoTseTransactions(Boolean b, DataLogicSales dlSales) {
+        autoTseTransactions = b;
+        
+        if (autoTseTransactions) {
+            if (str != null) {
+                if (getLinesCount() < 1) {
+                    abortTseTransaction(dlSales);
+                }
+            }
+        }
+        
     }
     
     public String getTseTimeFormat() {
@@ -430,20 +481,18 @@ public final class TicketInfo implements SerializableRead, Externalizable {
     
     public String getTseQRCode() {
         fillTseProcessData();
-        
         String s = "V0;";
         s = s + AppConfig.getTerminalSerial()+ ";" + 
                 "Kassenbeleg-V1" + ";" + 
                 TseProcessData.getProcessData() + ";" +
-                Long.toString(tseTransactionNumber) + ";" +
-                Long.toString(tseSignatureCounter) + ";" +
-                TseProcessData.dateFormat(tseLogTimeStart*1000) + ";" +
-                TseProcessData.dateFormat(tseLogTimeEnd*1000) + ";" +
+                Long.toString(str.transactionNumber) + ";" +
+                Long.toString(ftr.signatureCounter) + ";" +
+                TseProcessData.dateFormat(str.logTime * 1000) + ";" +
+                TseProcessData.dateFormat(ftr.logTime * 1000) + ";" +
                 tseHashAlgorythmus + ";" +
-                "unixTime;" +
-                tseSignatureValue + ";" +
+                tseTimeFormat + ";" +
+                getTseSignatureValue() + ";" +
                 tsePublicKey;
-        
         return s;
     }
     
@@ -482,6 +531,148 @@ public final class TicketInfo implements SerializableRead, Externalizable {
                 TseProcessData.zahlungUnbarEUR += pay.getTotal();
             }
         }
+    }
+    
+    public void setTillSerialNumber(String v) {
+        tillSerialNumber = v;
+    }
+    
+    public boolean mitTse() {
+        if (AppConfig.getTseStatus().equals("")) {
+            if (AppConfig.getTse() != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    public void setStartTransactionResult(StartTransactionResult r) {
+        str = r;
+    }
+    
+    public StartTransactionResult getStartTransactionResult() {
+        return str;
+    }
+    
+    public void clearStartTransactionResult() {
+        str = null;
+    }
+    
+    public boolean startTseTransaction() {
+        if ((str == null) && (getLinesCount()>0)) {
+            startTseTransactionForce();
+        }
+        return true;
+    }
+    
+    public boolean startTseTransactionForce() {
+        if (mitTse()) {
+            fillTseProcessData();
+            tillSerialNumber = AppConfig.getTerminalSerial();
+            str = AppConfig.getTse().startTransaction(AppConfig.getTerminalSerial(), 
+                                                         TseProcessData.getProcessData(), 
+                                                         AppConfig.getTse().getProcesstypeKassenbeleg(), 
+                                                         "");
+            if (str == null) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+        return true;
+    }
+    
+    public boolean getTseStarted() {
+        if (str == null) {
+            return false;
+        } else if (str.transactionNumber == 0) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+    
+    public boolean finishTseTransaction(DataLogicSales dlSales) {
+        if (getLinesCount() == 0) {
+            if (str != null) {
+                return abortTseTransaction(dlSales);
+            }
+            return true;
+        }
+        
+        if (str == null) {
+            startTseTransaction();
+        }
+        
+        return finishTseTransactionForce(dlSales);
+    }
+    
+    public boolean finishTseTransactionForce(DataLogicSales dlSales) {
+        if ((str != null) && mitTse()) {
+            fillTseProcessData();
+            tillSerialNumber = AppConfig.getTerminalSerial();
+            ftr = AppConfig.getTse().finishTransaction(AppConfig.getTerminalSerial(), 
+                                                       str.transactionNumber, 
+                                                       TseProcessData.getProcessData(), 
+                                                       AppConfig.getTse().getProcesstypeKassenbeleg(),
+                                                       "");
+        }
+        if (ftr != null) {
+            tseTimeFormat = AppConfig.getTse().getTimeFormat();
+            tseHashAlgorythmus = AppConfig.getTse().getSignaturAlgorithmus();
+            tseStatus = AppConfig.getTse().getCertificationId();
+            tsePublicKey = AppConfig.getTse().getPublicKey();
+            return true;
+        } else {
+            setTseData(System.currentTimeMillis()/1000,
+                       System.currentTimeMillis()/1000,
+                       "",  0,
+                       "",  0,
+                       "",  "",
+                       "TSE-Ausfall",   "");
+            return false;
+        }
+    }
+    
+    public boolean abortTseTransaction(DataLogicSales dlSales) {
+        Boolean result = true;
+        if (str != null) {
+            if (str.transactionNumber > 0) {
+                TseProcessData.clear();
+                TseProcessData.vorgangsTyp = "AVBelegabbruch";
+                ftr = AppConfig.getTse().finishTransaction(AppConfig.getTerminalSerial(), 
+                                                           str.transactionNumber, 
+                                                           TseProcessData.getProcessData(), 
+                                                           AppConfig.getTse().getProcesstypeKassenbeleg(),
+                                                           "");
+            }
+        }
+        if (ftr != null) {
+            tseTimeFormat = AppConfig.getTse().getTimeFormat();
+            tseHashAlgorythmus = AppConfig.getTse().getSignaturAlgorithmus();
+            tseStatus = AppConfig.getTse().getCertificationId();
+            tsePublicKey = AppConfig.getTse().getPublicKey();
+        } else {
+            setTseData(System.currentTimeMillis()/1000, 
+                       System.currentTimeMillis()/1000, 
+                       "",    0, 
+                       "",    0,
+                       "",    "",
+                       "TSE-Ausfall",
+                       "");
+            result = false;
+        }
+        try {
+            dlSales.saveTicketTseFailed(this);
+        } catch (BasicException ex) {
+            Logger.getLogger(TicketInfo.class.getName()).log(Level.SEVERE, null, ex);
+        }
+                                
+                                
+        m_sId = UUID.randomUUID().toString();
+        str = null;
+        ftr = null;
+        return result;
     }
     
     /**
@@ -614,6 +805,14 @@ public final class TicketInfo implements SerializableRead, Externalizable {
     public CustomerInfoExt getCustomer() {
         return m_Customer;
     }
+    
+    public void setAbrechnungskreis(String v) {
+        abrechnungskreis = v;
+    }
+    
+    public String getAbrechnungskreis() {
+        return abrechnungskreis;
+    }
 
     public void setCustomer(CustomerInfoExt value) {
         if (value == null) return;
@@ -687,6 +886,9 @@ public final class TicketInfo implements SerializableRead, Externalizable {
     public void addLine(TicketLineInfo oLine) {
         oLine.setTicket(m_sId, m_aLines.size());
         m_aLines.add(oLine);
+        if (autoTseTransactions) {
+            startTseTransaction();
+        }
     }
 
     public void addCouponLine(String id, int line, String text) {
@@ -711,6 +913,9 @@ public final class TicketInfo implements SerializableRead, Externalizable {
         if (m_aLines.size() == 0 || !flag) {
             oLine.setTicket(m_sId, m_aLines.size());
             m_aLines.add(oLine);
+            if (autoTseTransactions) {
+                startTseTransaction();
+            }
             return -1;
         } else {
             int size = m_aLines.size();
@@ -723,6 +928,9 @@ public final class TicketInfo implements SerializableRead, Externalizable {
             }
             oLine.setTicket(m_sId, m_aLines.size());
             m_aLines.add(oLine);
+            if (autoTseTransactions) {
+                startTseTransaction();
+            }
             return -1;
         }
     }
@@ -730,21 +938,35 @@ public final class TicketInfo implements SerializableRead, Externalizable {
     public void insertLine(int index, TicketLineInfo oLine) {
         m_aLines.add(index, oLine);
         refreshLines();
+        if (autoTseTransactions) {
+            startTseTransaction();
+        }
     }
 
     public void setLine(int index, TicketLineInfo oLine) {
         oLine.setTicket(m_sId, index);
         m_aLines.set(index, oLine);
+        if (autoTseTransactions) {
+            startTseTransaction();
+        }
     }
 
-    public void removeLine(int index) {
+    public void removeLine(int index, DataLogicSales dlSales) {
         m_aLines.remove(index);
         refreshLines();
+        if (getLinesCount() < 1) {
+            if (autoTseTransactions) {
+                abortTseTransaction(dlSales);
+            }
+        }
     }
 
     private void refreshLines() {
         for (int i = 0; i < m_aLines.size(); i++) {
             getLine(i).setTicket(m_sId, i);
+        }
+        if (autoTseTransactions) {
+            startTseTransaction();
         }
     }
 

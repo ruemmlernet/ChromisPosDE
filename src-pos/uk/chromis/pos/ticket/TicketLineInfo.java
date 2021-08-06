@@ -442,6 +442,10 @@ public class TicketLineInfo implements SerializableWrite, SerializableRead, Seri
             return multiply;
         }
     }
+    
+    public double getOriginalMultiply() {
+        return multiply;
+    }
 
     public void setMultiply(double dValue) {
         multiply = dValue;
@@ -537,7 +541,7 @@ public class TicketLineInfo implements SerializableWrite, SerializableRead, Seri
     }
 
     public String printMultiply() {
-        return Formats.DOUBLE.formatValue(getMultiply());
+        return Formats.DOUBLE.formatValue(getOriginalMultiply());
     }
 
     public String printRefundQty() {
