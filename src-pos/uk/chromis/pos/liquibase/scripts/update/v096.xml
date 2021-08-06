@@ -45,6 +45,9 @@
             <column name="COUNT" type="int" defaultValue="0">
                 <constraints nullable="false"/>
             </column>
+            <column name="COUNT_RES" type="int" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
             <column name="SFLAG" type="${boolean.type}" defaultValueBoolean="true" >
                 <constraints nullable="false"/>
             </column>   
@@ -87,6 +90,7 @@
             <column name="TSE_STATUS" type="varchar(50)"/>
             <column name="TSE_PUBLICKEY" type="varchar(255)"/>
             <column name="GV_TYP" type="varchar(50)"/>                    
+            <column name="VORGANGSTYP" type="varchar(50)"/>                    
         </addColumn> 
     </changeSet>
                       
@@ -139,6 +143,17 @@
         </addColumn>
     </changeSet>
     
+    <changeSet author="Chromis Pos DE" id="Add AbrKreis to TICKETS">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists columnName="ABRKREIS" tableName="TICKETS"/>
+            </not>
+        </preConditions>
+
+        <addColumn tableName="TICKETS">           
+            <column name="ABRKREIS" type="varchar(255)"/>
+        </addColumn>
+    </changeSet>
     
     <changeSet author="Chromis Pos DE" id="Update Menu.Root for 0.96.0">   
         <update tableName="RESOURCES">
