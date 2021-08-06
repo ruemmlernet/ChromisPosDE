@@ -543,7 +543,7 @@ public class PromotionSupport {
         }
 
         while (productline != null && productline.isPromotionAdded()) {
-            ticket.removeLine(index);
+            ticket.removeLine(index, m_salesLogic);
             if (index < ticket.getLines().size()) {
                 productline = ticket.getLine(index);
             } else {
