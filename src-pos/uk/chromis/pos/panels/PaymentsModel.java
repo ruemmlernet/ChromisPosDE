@@ -166,10 +166,10 @@ public class PaymentsModel {
                 SerializerWriteString.INSTANCE, new SerializerReadBasic(new Datas[]{Datas.DOUBLE}))
                 .find(app.getActiveCashIndex());
 
-        if (valcategorysales == null) {
-            p.m_dMoneyStart = 0.0;
-        } else {
+        if (valcategorysales2 != null) {
             p.m_dMoneyStart = (Double) valcategorysales2[0];
+        } else {
+            p.m_dMoneyStart = 0.0;
         }
 
         List categorys = new StaticSentence(app.getSession(), "SELECT a.NAME, sum(c.UNITS), sum(c.UNITS * (c.PRICE + (c.PRICE * d.RATE))) "
