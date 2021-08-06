@@ -24,12 +24,11 @@ package uk.chromis.pos.sales;
 
 import bsh.EvalError;
 import bsh.Interpreter;
-import com.cryptovision.SEAPI.TSE.FinishTransactionResult;
-import com.cryptovision.SEAPI.TSE.StartTransactionResult;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
@@ -103,7 +102,6 @@ import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.data.JRMapArrayDataSource;
 import net.sf.jasperreports.engine.design.JasperDesign;
 import net.sf.jasperreports.engine.xml.JRXmlLoader;
-import org.bouncycastle.util.encoders.Hex;
 import uk.chromis.data.gui.JMessageDialog;
 import uk.chromis.pos.catalog.JCatalog;
 import uk.chromis.pos.printer.DeviceDisplayAdvance;
@@ -113,9 +111,6 @@ import uk.chromis.pos.promotion.PromotionSupport;
 import uk.chromis.pos.sync.DataLogicSync;
 import uk.chromis.pos.util.AutoLogoff;
 import uk.chromis.pos.ticket.PlayWave;
-import uk.chromis.pos.tse.TseInfo;
-import uk.chromis.pos.tse.TseInfoCryptovision;
-import uk.chromis.pos.tse.TseProcessData;
 import uk.chromis.pos.xsite.XSiteStockCheck;
 
 public abstract class JPanelTicket extends JPanel implements JPanelView, BeanFactoryApp, TicketsEditor {
@@ -836,12 +831,12 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, BeanFac
                 int numlines = m_oTicket.getLinesCount();
                 for (int i = 0; i < numlines; i++) {
                     TicketLineInfo current_ticketline = m_oTicket.getLine(i);
-                    double current_unit = current_ticketline.getMultiply();
+                    double current_unit = current_ticketline.getOriginalMultiply();
                     if (current_unit != 0.0D) {
                         for (int j = i + 1; j < numlines; j++) {
                             if ((m_oTicket.getLine(j).getProductID() != null) && (m_oTicket.getLine(j).getProductName() != "")) {
                                 TicketLineInfo loop_ticketline = m_oTicket.getLine(j);
-                                double loop_unit = loop_ticketline.getMultiply();
+                                double loop_unit = loop_ticketline.getOriginalMultiply();
                                 String current_productid = current_ticketline.getProductID();
                                 String loop_productid = loop_ticketline.getProductID();
                                 String loop_attr = loop_ticketline.getProductAttSetInstDesc();
@@ -867,7 +862,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, BeanFac
                     TicketLineInfo loop_ticketline = m_oTicket.getLine(i);
                     double loop_unit = loop_ticketline.getMultiply();
                     if (loop_unit == 0) {
-                        m_oTicket.removeLine(i);
+                        m_oTicket.removeLine(i, dlSales);
 
                     }
                 }
@@ -913,24 +908,24 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, BeanFac
                         });
 
                 if (m_oTicket.getLine(i).isProductCom()) {
-                    m_oTicket.removeLine(i);
+                    m_oTicket.removeLine(i, dlSales);
                     m_ticketlines.removeTicketLine(i);
                     //}
                     //if (m_oTicket.getLine(i).getPromotionId() != null) {
                 } else if (m_oTicket.getLine(i).getPromotionId() != null) {
                     // Check for promotion discounts added to the product
-                    m_oTicket.removeLine(i);
+                    m_oTicket.removeLine(i, dlSales);
                     m_ticketlines.removeTicketLine(i);
                     // Remove discount lines
                     while (i < m_oTicket.getLinesCount() && m_oTicket.getLine(i).isPromotionAdded()) {
-                        m_oTicket.removeLine(i);
+                        m_oTicket.removeLine(i, dlSales);
                         m_ticketlines.removeTicketLine(i);
                     }
                 } else {
-                    m_oTicket.removeLine(i);
+                    m_oTicket.removeLine(i, dlSales);
                     m_ticketlines.removeTicketLine(i);
                     while (i < m_oTicket.getLinesCount() && m_oTicket.getLine(i).isProductCom()) {
-                        m_oTicket.removeLine(i);
+                        m_oTicket.removeLine(i, dlSales);
                         m_ticketlines.removeTicketLine(i);
                     }
                 }
@@ -1032,13 +1027,11 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, BeanFac
             if (oProduct == null) {
                 if (AppConfig.getInstance().getBoolean("till.customsounds")) {
                     new PlayWave("error.wav").start(); // playing WAVE file 
-                } else if (AppConfig.getInstance().getBoolean("till.customsounds")) {
-                    new PlayWave("error.wav").start(); // playing WAVE file 
                 } else {
                     Toolkit.getDefaultToolkit().beep();
                 }
-                JOptionPane.showMessageDialog(null,
-                        sCode + " - " + AppLocal.getIntString("message.noproduct"), "Check", JOptionPane.WARNING_MESSAGE);
+//                JOptionPane.showMessageDialog(null,
+//                        sCode + " - " + AppLocal.getIntString("message.noproduct"), "Check", JOptionPane.WARNING_MESSAGE);
                 stateToZero();
             } else {
                 new PlayWave("beep.wav").start(); // playing WAVE file  
@@ -1790,27 +1783,9 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, BeanFac
                     paymentdialog.setPrintSelected("true".equals(m_jbtnconfig.getProperty("printselected", "true")));
 
                     paymentdialog.setTransactionID(ticket.getTransactionID());
-
                     
-                    
-                    // Hier schon mit TSE beginnen 
-                    Boolean mitTse = false;
-                    StartTransactionResult str = null;
-                    FinishTransactionResult ftr = null;
-                    if (AppConfig.getTseStatus().equals("")) {
-                        if (AppConfig.getTse() != null) {
-                            mitTse = true;
-                        }
-                    }
-                    // TSE ist aktiv und (hoffentlich) richtig konfiguriert !!!
-                    if (mitTse) {
-                        ticket.fillTseProcessData();
-                        str = AppConfig.getTse().startTransaction(AppConfig.getTerminalSerial(),
-                                                                  TseProcessData.getProcessData(), 
-                                                                  AppConfig.getTse().getProcesstypeKassenbeleg(),
-                                                                  "");
-                    }
-                        
+                    // übergangsweise für SharedTickets, die noch keinen TSE-Vorgang gestartet haben
+                    ticket.startTseTransaction();
                     
                     if (paymentdialog.showDialog(ticket.getTotal(), ticket.getCustomer())) {
 
@@ -1828,45 +1803,9 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, BeanFac
                             //    if (!paymentdialog.isPrintSelected()) {
                             //        ticket.setTicketType(TicketType.INVOICE);
                             //    
-                            
-                            
-                            // Hier muss die TSE-Kiste eingebaut werden
-                            // TSE ist aktiv und (hoffentlich) richtig konfiguriert !!!
-                            if (mitTse) {
-                                if (str != null) {
-                                    // hat geklappt, also weiter ...
-                                    ftr = AppConfig.getTse().finishTransaction(AppConfig.getTerminalSerial(), 
-                                                                               str.transactionNumber, 
-                                                                               TseProcessData.getProcessData(), 
-                                                                               AppConfig.getTse().getProcesstypeKassenbeleg(),
-                                                                               "");
-                                }
-                                if (ftr != null) {
-                                    ticket.setTseData(str.logTime, 
-                                                      ftr.logTime, 
-                                                      AppConfig.getTerminalSerial(),
-                                                      ftr.signatureCounter, 
-                                                      Hex.toHexString(ftr.signatureValue), 
-                                                      str.transactionNumber, 
-                                                      AppConfig.getTse().getTimeFormat(),
-                                                      AppConfig.getTse().getSignaturAlgorithmus(), 
-                                                      AppConfig.getTse().getCertificationId(), 
-                                                      AppConfig.getTse().getPublicKey());
-                                } else {
-                                    ticket.setTseData(System.currentTimeMillis()/1000, 
-                                                      System.currentTimeMillis()/1000, 
-                                                      "",    0, 
-                                                      "",    0, 
-                                                      "",    "",
-                                                      "TSE-Ausfall",
-                                                      "");
-                                    JOptionPane.showMessageDialog(null, "Störung der TSE !!!\r\n\r\nBitte umgehend den Kassenverantwortlichen Informieren !!!", 
-                                                                  "Warnung", JOptionPane.WARNING_MESSAGE);
-                                }
-                                // ENDE DER TSE-KISTE
-                            } else {
-                                // hier ohne TSE ...
-                                ticket.setTseData(0, 0, "", 0, "", 0, "", "", "", "");
+                            if (!ticket.finishTseTransaction(dlSales)) {
+                                JOptionPane.showMessageDialog(null, "Störung der TSE !!!\r\n\r\nBitte umgehend den Kassenverantwortlichen informieren !!!", 
+                                                              "Warnung", JOptionPane.WARNING_MESSAGE);
                             }
 
                             try {
@@ -1913,50 +1852,6 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, BeanFac
                                 restDB.clearWaiterNameInTable(ticketext.toString());
                                 restDB.clearTicketIdInTable(ticketext.toString());
                                 restDB.clearTableLockByName(ticketext.toString());
-                            }
-                        }
-                    } else {
-                        if (mitTse) {
-                            // Transaktion fehlgeschlagen, dokumentieren !!!
-                            // Einfügen in Receipts und Payment
-                            if (str != null) {
-                                // hat geklappt, also weiter ...
-                                TseProcessData.clear();
-                                TseProcessData.vorgangsTyp = "AVBelegabbruch";
-                                ftr = AppConfig.getTse().finishTransaction(AppConfig.getTerminalSerial(), 
-                                                                           str.transactionNumber, 
-                                                                           TseProcessData.getProcessData(), 
-                                                                           AppConfig.getTse().getProcesstypeKassenbeleg(),
-                                                                           "");
-                            }
-                            if (ftr != null) {
-                                ticket.setTseData(str.logTime, 
-                                                  ftr.logTime, 
-                                                  Hex.toHexString(ftr.serialNumber), 
-                                                  ftr.signatureCounter, 
-                                                  Hex.toHexString(ftr.signatureValue), 
-                                                  str.transactionNumber, 
-                                                  AppConfig.getTse().getTimeFormat(),
-                                                  AppConfig.getTse().getSignaturAlgorithmus(), 
-                                                  AppConfig.getTse().getCertificationId(), 
-                                                  AppConfig.getTse().getPublicKey());
-                            
-                            } else {
-                                ticket.setTseData(System.currentTimeMillis()/1000, 
-                                                  System.currentTimeMillis()/1000, 
-                                                  "",    0, 
-                                                  "",    0, 
-                                                  "",    "",
-                                                  "TSE-Ausfall",
-                                                  "");
-                                JOptionPane.showMessageDialog(null, "Störung der TSE !!!\r\n\r\nBitte umgehend den Kassenverantwortlichen Informieren !!!", 
-                                                              "Warnung", JOptionPane.WARNING_MESSAGE);
-                            }
-                            try {
-                                dlSales.saveTicketTseFailed(ticket);
-                                m_oTicket = ticket.copyTicket();
-                            } catch (BasicException ex) {
-                                Logger.getLogger(JPanelTicket.class.getName()).log(Level.SEVERE, null, ex);
                             }
                         }
                     }
@@ -2772,7 +2667,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, BeanFac
         });
         jPanel2.add(jEditAttributes);
 
-        m_checkStock.setIcon(new javax.swing.ImageIcon(getClass().getResource("/uk/chromis/images/search32xs.png"))); // NOI18N
+        m_checkStock.setIcon(new javax.swing.ImageIcon(getClass().getResource("/uk/chromis/images/pay.png"))); // NOI18N
         m_checkStock.setToolTipText(bundle.getString("tiptext.productsearch")); // NOI18N
         m_checkStock.setFocusPainted(false);
         m_checkStock.setFocusable(false);
@@ -3154,20 +3049,35 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, BeanFac
 
     private void btnSplitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSplitActionPerformed
         AutoLogoff.getInstance().deactivateTimer();
+        m_oTicket.startTseTransaction();
         if (m_oTicket.getArticlesCount() > 1) {
             //read resource ticket.line and execute
             ReceiptSplit splitdialog = ReceiptSplit.getDialog(this, dlSystem.getResourceAsXML("Ticket.Line"), dlSales, dlCustomers, taxeslogic);
+            splitdialog.setBounds(splitdialog.getX() , splitdialog.getY(), this.getWidth() - 100, splitdialog.getHeight());
 
             TicketInfo ticket1 = m_oTicket.copyTicket();
             TicketInfo ticket2 = new TicketInfo();
+            ticket2.setStartTransactionResult(ticket1.getStartTransactionResult());
             ticket2.setCustomer(m_oTicket.getCustomer());
+            ticket2.setUser(m_oTicket.getUser());
+            ticket2.setActiveCash(m_App.getActiveCashIndex());
+            ticket2.setDate(new Date());
+            ticket1.setAutoTseTransactions(false, dlSales);
+            ticket2.setAutoTseTransactions(false, dlSales);
 
             if (splitdialog.showDialog(ticket1, ticket2, m_oTicketExt)) {
                 executeEvent(ticket2, m_oTicketExt, "ticket.change");
+                ticket2.clearStartTransactionResult();
+                ticket2.setAbrechnungskreis(ticket1.getId());
                 if (closeTicket(ticket2, m_oTicketExt)) {
+                    ticket1.setAbrechnungskreis(ticket1.getId());
+                    ticket1.setAutoTseTransactions(true, dlSales);
+                    ticket2.setAutoTseTransactions(true, dlSales);
                     setActiveTicket(ticket1, m_oTicketExt);
                     executeEventAndRefresh("ticket.pretotals");
                     executeEventAndRefresh("ticket.change");
+                } else {
+                    ticket2.abortTseTransaction(dlSales);
                 }
             }
         }

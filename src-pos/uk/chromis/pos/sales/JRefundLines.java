@@ -182,9 +182,11 @@ public class JRefundLines extends javax.swing.JPanel {
                 TicketLineInfo oNewLine = new TicketLineInfo(oLine);
                 oNewLine.setMultiply(-1.0 * oLine.getRefundQty());
                 m_jTicketEdit.addTicketLine(oNewLine);
+                oNewLine.setMultiply(-1.0 * oLine.getRefundQty());
+                m_jTicketEdit.updatePromotions("promotion.refund", 0, null);
             }
         }
-        m_jTicketEdit.updatePromotions("promotion.refund", 0, null);
+//        m_jTicketEdit.updatePromotions("promotion.refund", 0, null);
     }//GEN-LAST:event_m_jbtnAddAllActionPerformed
 
 
@@ -206,6 +208,7 @@ public class JRefundLines extends javax.swing.JPanel {
                 TicketLineInfo oNewLine = new TicketLineInfo(oLine);
                 oNewLine.setMultiply(-1.0);
                 m_jTicketEdit.addTicketLine(oNewLine);
+                oNewLine.setMultiply(-1.0);
 
                 if (index < m_aLines.size() - 1) {
                     oLine = (TicketLineInfo) m_aLines.get(++index);

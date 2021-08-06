@@ -151,7 +151,6 @@ public class ReceiptSplit extends javax.swing.JDialog {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle(AppLocal.getIntString("caption.split")); // NOI18N
-        setResizable(false);
 
         jPanel2.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT));
 
@@ -266,7 +265,7 @@ public class ReceiptSplit extends javax.swing.JDialog {
 
         getContentPane().add(jPanel1, java.awt.BorderLayout.CENTER);
 
-        setSize(new java.awt.Dimension(730, 470));
+        setSize(new java.awt.Dimension(904, 470));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 

@@ -122,23 +122,28 @@ public class JTicketsBagTicket extends JTicketsBag {
 
     @Override
     public void deleteTicket() {
-        if (m_ticketCopy != null) {
+/*        if (m_ticketCopy != null) {
             // Para editar borramos el ticket anterior
             try {
                 m_dlSales.deleteTicket(m_ticketCopy, m_App.getInventoryLocation());
             } catch (BasicException eData) {
                 MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nosaveticket"), eData);
                 msg.show(this);
-            }
+            }   
         }
 
         m_ticket = null;
         m_ticketCopy = null;
         resetToTicket();
+*/        
     }
 
     public void canceleditionTicket() {
-
+        if (m_panelticketedit.m_oTicket.getLinesCount() > 0) {
+            m_panelticketedit.m_oTicket.abortTseTransaction(m_dlSales);
+        }
+        
+//        m_ticketCopy.abortTseTransaction(m_dlSales);
         m_ticketCopy = null;
         resetToTicket();
     }
@@ -447,6 +452,7 @@ public class JTicketsBagTicket extends JTicketsBag {
             refundticket.setTicketType(TicketType.REFUND);
             refundticket.setCustomer(m_ticket.getCustomer());
             refundticket.setPayments(m_ticket.getPayments());
+            refundticket.setAbrechnungskreis(m_ticket.getId());
             refundticket.setOldTicket(true);
             refundticket.setProperty("oldticket", m_ticket.getId());
             m_panelticketedit.setActiveTicket(refundticket, null);

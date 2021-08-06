@@ -166,13 +166,13 @@ public class SimpleReceipt extends javax.swing.JPanel {
             
             TicketLineInfo line = ticket.getLine(i);
             l.add(line);
-            ticket.removeLine(i);
+            ticket.removeLine(i, dlSales);
             ticketlines.removeTicketLine(i);
             
             // add also auxiliars
             while (i < ticket.getLinesCount() && ticket.getLine(i).isProductCom()) {
                 l.add(ticket.getLine(i));
-                ticket.removeLine(i);
+                ticket.removeLine(i, dlSales);
                 ticketlines.removeTicketLine(i);
             }        
             printTotals();
@@ -209,14 +209,14 @@ public class SimpleReceipt extends javax.swing.JPanel {
                     i++;
                 } else { // == 1.0
                     l.add(line);
-                    ticket.removeLine(i);
+                    ticket.removeLine(i, dlSales);
                     ticketlines.removeTicketLine(i);
                 }
                 
                 // add also auxiliars
                 while (i < ticket.getLinesCount() && ticket.getLine(i).isProductCom()) {
                     l.add(ticket.getLine(i));
-                    ticket.removeLine(i);
+                    ticket.removeLine(i, dlSales);
                     ticketlines.removeTicketLine(i);
                 }              
                 printTotals();
