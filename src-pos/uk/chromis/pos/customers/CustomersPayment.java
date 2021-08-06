@@ -653,56 +653,11 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
             ticket.setCustomer(customerext);
             
             // Hier schon mit TSE beginnen 
-            Boolean mitTse = false;
-            TSE.StartTransactionResult str = null;
-            TSE.FinishTransactionResult ftr = null;
-            if (AppConfig.getTseStatus().equals("")) {
-                if (AppConfig.getTse() != null) {
-                    mitTse = true;
-                }
+            if (!ticket.startTseTransactionForce()) {
+                JOptionPane.showMessageDialog(null, "Störung der TSE !!!\r\n\r\nBitte umgehend den Kassenverantwortlichen informieren !!!", 
+                                              "Warnung", JOptionPane.WARNING_MESSAGE);
             }
-            // TSE ist aktiv und (hoffentlich) richtig konfiguriert !!!
-            if (mitTse) {
-                ticket.fillTseProcessData();
-                str = AppConfig.getTse().startTransaction(AppConfig.getTerminalSerial(),
-                                                          TseProcessData.getProcessData(), 
-                                                          AppConfig.getTse().getProcesstypeKassenbeleg(),
-                                                          "");
-                if (str != null) {
-                    // hat geklappt, also weiter ...
-                    ftr = AppConfig.getTse().finishTransaction(AppConfig.getTerminalSerial(), 
-                                                               str.transactionNumber, 
-                                                               TseProcessData.getProcessData(), 
-                                                               AppConfig.getTse().getProcesstypeKassenbeleg(),
-                                                               "");
-                }
-                if (ftr != null) {
-                    ticket.setTseData(str.logTime, 
-                                      ftr.logTime, 
-                                      Hex.toHexString(ftr.serialNumber), 
-                                      ftr.signatureCounter, 
-                                      Hex.toHexString(ftr.signatureValue), 
-                                      str.transactionNumber, 
-                                      AppConfig.getTse().getTimeFormat(),
-                                      AppConfig.getTse().getSignaturAlgorithmus(), 
-                                      AppConfig.getTse().getCertificationId(), 
-                                      AppConfig.getTse().getPublicKey());
-                } else {
-                    ticket.setTseData(System.currentTimeMillis()/1000, 
-                                      System.currentTimeMillis()/1000, 
-                                      "",    0, 
-                                      "",    0, 
-                                      "",    "",
-                                      "TSE-Ausfall",
-                                      "");
-                    JOptionPane.showMessageDialog(null, "Störung der TSE !!!\r\n\r\nBitte umgehend den Kassenverantwortlichen Informieren !!!", 
-                                                  "Warnung", JOptionPane.WARNING_MESSAGE);
-                }
-                // ENDE DER TSE-KISTE
-            } else {
-                // hier ohne TSE ...
-                ticket.setTseData(0, 0, "", 0, "", 0, "", "", "", "");
-            }
+            ticket.finishTseTransactionForce(dlsales);
             
             try {
                 dlsales.saveTicket(ticket, app.getInventoryLocation());
@@ -710,7 +665,6 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
                 MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nosaveticket"), eData);
                 msg.show(this);
             }
-            
             
             try {
                 // code added to allow last ticket reprint       
@@ -720,7 +674,6 @@ public class CustomersPayment extends javax.swing.JPanel implements JPanelView, 
             } catch (IOException ex) {
                 Logger.getLogger(CustomersPayment.class.getName()).log(Level.SEVERE, null, ex);
             }
-
 
             // reload customer
             CustomerInfoExt c;

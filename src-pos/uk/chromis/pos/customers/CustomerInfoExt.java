@@ -147,7 +147,7 @@ public class CustomerInfoExt extends CustomerInfo {
      * @return customer's current value of account
      */
     public Double getCurdebt() {
-        return curdebt;
+        return RoundUtils.getValue(this.curdebt);
     }
 
     public void setCurdebt(Double curdebt) {
