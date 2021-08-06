@@ -22,8 +22,8 @@
  */
 package uk.chromis.pos.sales.shared;
 
-import java.awt.Dimension;
-import java.awt.Toolkit;
+//import java.awt.Dimension;
+//import java.awt.Toolkit;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -110,6 +110,9 @@ public class JTicketsBagShared extends JTicketsBag {
      */
     @Override
     public void deleteTicket() {
+        if (m_panelticket.getActiveTicket().getTseStarted()) {
+            m_panelticket.getActiveTicket().abortTseTransaction(dlSales);
+        }
         m_sCurrentTicket = null;
         selectValidTicket();
     }
