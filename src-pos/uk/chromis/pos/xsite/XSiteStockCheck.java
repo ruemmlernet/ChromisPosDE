@@ -24,18 +24,23 @@ package uk.chromis.pos.xsite;
 
 import java.awt.Component;
 import java.awt.Dialog;
-import java.awt.Dimension;
 import java.awt.Frame;
+import java.awt.Toolkit;
 import java.awt.Window;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
-import javax.swing.JOptionPane;
+import java.text.DecimalFormat;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import uk.chromis.data.loader.Session;
+import uk.chromis.pos.forms.AppConfig;
+import uk.chromis.pos.ticket.PlayWave;
 import uk.chromis.pos.util.DbUtils;
 
 public class XSiteStockCheck extends javax.swing.JDialog {
@@ -58,8 +63,8 @@ public class XSiteStockCheck extends javax.swing.JDialog {
     private void init(Session s) {
         this.s = s;
         initComponents();
-        setTitle("Cross Site Stock Check");
-
+        setTitle("Product Check");
+        getRootPane().setDefaultButton(jBtnCheck);
         // configure the table sizes
         DefaultTableCellRenderer renderer = (DefaultTableCellRenderer) jStockTable.getTableHeader().getDefaultRenderer();
         renderer.setHorizontalAlignment(SwingConstants.LEFT);
@@ -68,18 +73,12 @@ public class XSiteStockCheck extends javax.swing.JDialog {
 
         //get sites details from database        
         //populate combo box
-        jSiteList.removeAll();
         try {
             con = s.getConnection();
-            stmt = (Statement) con.createStatement();
-            rs = stmt.executeQuery("SELECT * FROM XSITELIST");
-            jSiteList.addItem("All Sites");
-            while (rs.next()) {
-                jSiteList.addItem(rs.getString("NAME"));
-            }
         } catch (Exception e) {
 
         }
+        
     }
 
     public static XSiteStockCheck getXSite(Component parent, Session s) {
@@ -104,14 +103,28 @@ public class XSiteStockCheck extends javax.swing.JDialog {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jScrollPane2 = new javax.swing.JScrollPane();
+        jTextArea1 = new javax.swing.JTextArea();
         jLabel3 = new javax.swing.JLabel();
         jBarcode = new javax.swing.JTextField();
-        jSiteList = new javax.swing.JComboBox<>();
-        jLabel2 = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
         jStockTable = new javax.swing.JTable();
         jBtnCheck = new javax.swing.JButton();
-        jBtnCancel = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
+        jReference = new javax.swing.JTextField();
+        jLabel2 = new javax.swing.JLabel();
+        jProductName = new javax.swing.JTextField();
+        jLabel4 = new javax.swing.JLabel();
+        jCategory = new javax.swing.JTextField();
+        jLabel5 = new javax.swing.JLabel();
+        jPriceSellTaxed = new javax.swing.JTextField();
+        jRabatt = new javax.swing.JCheckBox();
+        jLabel6 = new javax.swing.JLabel();
+        jBarcode2 = new javax.swing.JTextField();
+
+        jTextArea1.setColumns(20);
+        jTextArea1.setRows(5);
+        jScrollPane2.setViewportView(jTextArea1);
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setAlwaysOnTop(true);
@@ -121,11 +134,11 @@ public class XSiteStockCheck extends javax.swing.JDialog {
         jLabel3.setText(bundle.getString("label.prodbarcode")); // NOI18N
 
         jBarcode.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-
-        jSiteList.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-
-        jLabel2.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-        jLabel2.setText(bundle.getString("label.selectsite")); // NOI18N
+        jBarcode.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                jBarcodeKeyPressed(evt);
+            }
+        });
 
         jStockTable.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
         jStockTable.setModel(new javax.swing.table.DefaultTableModel(
@@ -147,60 +160,123 @@ public class XSiteStockCheck extends javax.swing.JDialog {
         jStockTable.getTableHeader().setReorderingAllowed(false);
         jScrollPane1.setViewportView(jStockTable);
 
-        jBtnCheck.setText(bundle.getString("Button.Check")); // NOI18N
+        jBtnCheck.setText(bundle.getString("Button.CheckProd"));
         jBtnCheck.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jBtnCheckActionPerformed(evt);
             }
         });
 
-        jBtnCancel.setText(bundle.getString("Button.Cancel")); // NOI18N
-        jBtnCancel.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jBtnCancelActionPerformed(evt);
-            }
-        });
+        jLabel1.setText("Referenz");
+
+        jReference.setEditable(false);
+        jReference.setFocusable(false);
+
+        jLabel2.setText("Name");
+
+        jProductName.setEditable(false);
+        jProductName.setFocusable(false);
+
+        jLabel4.setText("Kategorie");
+
+        jCategory.setEditable(false);
+        jCategory.setFocusable(false);
+
+        jLabel5.setText("Verkaufspreis");
+
+        jPriceSellTaxed.setEditable(false);
+        jPriceSellTaxed.setFocusable(false);
+
+        jRabatt.setText("rabattfähig");
+        jRabatt.setFocusable(false);
+
+        jLabel6.setText("Barcode");
+
+        jBarcode2.setEditable(false);
+        jBarcode2.setFocusable(false);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(jBtnCheck)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jBtnCancel, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 93, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGap(10, 10, 10)
+                        .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 93, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(4, 4, 4)
+                        .addComponent(jBarcode, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(87, 87, 87)
+                        .addComponent(jBtnCheck))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(110, 110, 110)
+                        .addComponent(jRabatt))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(10, 10, 10)
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 474, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jBarcode, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jSiteList, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 474, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(20, Short.MAX_VALUE))
+                            .addGroup(layout.createSequentialGroup()
+                                .addGap(10, 10, 10)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jLabel6)
+                                    .addComponent(jLabel1)
+                                    .addComponent(jLabel5)))
+                            .addGroup(layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(jLabel4))
+                            .addGroup(layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(jLabel2)))
+                        .addGap(32, 32, 32)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jCategory, javax.swing.GroupLayout.PREFERRED_SIZE, 377, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jProductName, javax.swing.GroupLayout.PREFERRED_SIZE, 377, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jReference, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jBarcode2, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jPriceSellTaxed, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                .addGap(31, 31, 31))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel3)
-                    .addComponent(jBarcode, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel2)
-                    .addComponent(jSiteList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 107, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGap(11, 11, 11)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jBtnCancel)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(3, 3, 3)
+                        .addComponent(jLabel3))
+                    .addComponent(jBarcode, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jBtnCheck))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(3, 3, 3)
+                        .addComponent(jLabel6))
+                    .addComponent(jBarcode2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(8, 8, 8)
+                        .addComponent(jLabel1))
+                    .addGroup(layout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jReference, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jProductName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel2))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jCategory, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel4))
+                .addGap(7, 7, 7)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel5)
+                    .addComponent(jPriceSellTaxed, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(13, 13, 13)
+                .addComponent(jRabatt)
+                .addGap(7, 7, 7)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 123, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(32, Short.MAX_VALUE))
         );
 
         pack();
@@ -208,11 +284,49 @@ public class XSiteStockCheck extends javax.swing.JDialog {
 
     private void jBtnCheckActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBtnCheckActionPerformed
         // TODO add your handling code here:
-        Connection siteConnection;
-        Statement stmt2;
-        ResultSet rs2;
         String barcode = jBarcode.getText();
+        String productID = "";
         Double units;
+        DecimalFormat df2 = new DecimalFormat("0.00");
+        
+        if ("".equals(barcode)) {
+            return;
+        }
+        
+        try {
+            stmt = (Statement) con.createStatement();
+            rs = stmt.executeQuery("select p.ID, p.REFERENCE, p.CODE, p.NAME, p.PRICESELL, p.CANDISCOUNT, " +
+                                    "       c.name KATEGORIE, (select rate from taxes t where t.category = p.taxcat limit 1) TAX, " +
+                                    "       (select units from stockcurrent s where s.product = p.id limit 1) STOCK " +
+                                    "from products p left join categories c on c.ID = p.CATEGORY " +
+                                    "where code = '" + barcode + "'");
+            if (rs.next()) {
+                jBarcode2.setText(barcode);
+                jReference.setText(rs.getString("REFERENCE"));
+                jProductName.setText(rs.getString("NAME"));
+                jCategory.setText(rs.getString("KATEGORIE"));
+                jPriceSellTaxed.setText(df2.format(rs.getDouble("PRICESELL") * (1 + rs.getDouble("TAX"))));
+                jRabatt.setSelected((rs.getInt("CANDISCOUNT") == 1));
+                productID = rs.getString("ID");
+                new PlayWave("beep.wav").start(); // playing WAVE file 
+            } else {
+                jBarcode2.setText("");
+                jReference.setText("");
+                jProductName.setText("");
+                jCategory.setText("");
+                jPriceSellTaxed.setText("");
+                jRabatt.setSelected(false);
+                productID = "#-$#";
+                if (AppConfig.getInstance().getBoolean("till.customsounds")) {
+                    new PlayWave("error.wav").start(); // playing WAVE file 
+                } else {
+                    Toolkit.getDefaultToolkit().beep();
+                }
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(XSiteStockCheck.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
         //Clear the table if there is any data
         DefaultTableModel model = (DefaultTableModel) jStockTable.getModel();
         int rows = model.getRowCount();
@@ -220,49 +334,31 @@ public class XSiteStockCheck extends javax.swing.JDialog {
             model.removeRow(i);
         }
 
-        if (jSiteList.getSelectedItem().equals("All Sites")) {
-            try {
-                con = s.getConnection();
-                stmt = (Statement) con.createStatement();
-                rs = stmt.executeQuery("SELECT * FROM XSITELIST");
-                while (rs.next()) {
-                    siteConnection = DbUtils.getRemoteConnection(rs.getString("SITEUSERNAME"), rs.getString("SITEPASSWORD"), rs.getString("SITEURL"));
-                    stmt2 = (Statement) siteConnection.createStatement();
-                    rs2 = stmt2.executeQuery("SELECT UNITS FROM STOCKCURRENT WHERE STOCKCURRENT.PRODUCT = (SELECT ID FROM PRODUCTS WHERE PRODUCTS.CODE='" + barcode + "')");
-                    while (rs2.next()) {
-                        units = rs2.getDouble("UNITS");
-                        Object row[] = {rs.getString("NAME"), units.intValue()};
-                        model = (DefaultTableModel) jStockTable.getModel();
-                        model.addRow(row);
-                    }
-                }
-            } catch (Exception e) {
+        try {
+            con = s.getConnection();
+            stmt = (Statement) con.createStatement();
+            rs = stmt.executeQuery("select L.NAME, S.UNITS from stockcurrent s " +
+                                   "       left join locations L ON L.ID = S.LOCATION where S.PRODUCT = '"+productID+"'");
+            while (rs.next()) {
+                units = rs.getDouble("UNITS");
+                Object row[] = {rs.getString("NAME"), units};
+                model = (DefaultTableModel) jStockTable.getModel();
+                model.addRow(row);
             }
-        } else {
-            try {
-                con = s.getConnection();
-                stmt = (Statement) con.createStatement();
-                rs = stmt.executeQuery("SELECT * FROM XSITELIST WHERE NAME='" + jSiteList.getSelectedItem() + "'");
-                while (rs.next()) {
-                    siteConnection = DbUtils.getRemoteConnection(rs.getString("SITEUSERNAME"), rs.getString("SITEPASSWORD"), rs.getString("SITEURL"));
-                    stmt2 = (Statement) siteConnection.createStatement();
-                    rs2 = stmt2.executeQuery("SELECT UNITS FROM STOCKCURRENT WHERE STOCKCURRENT.PRODUCT = (SELECT ID FROM PRODUCTS WHERE PRODUCTS.CODE='" + barcode + "')");
-                    while (rs2.next()) {
-                        Object row[] = {rs.getString("NAME"), rs2.getDouble("UNITS")};
-                        model = (DefaultTableModel) jStockTable.getModel();
-                        model.addRow(row);
-                    }
-                }
-            } catch (Exception e) {
-            }
+        } catch (SQLException ex) {
+            Logger.getLogger(XSiteStockCheck.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-
+        jBarcode.setText("");
+        jBarcode.requestFocus();
     }//GEN-LAST:event_jBtnCheckActionPerformed
 
-    private void jBtnCancelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBtnCancelActionPerformed
-        dispose();
-    }//GEN-LAST:event_jBtnCancelActionPerformed
+    private void jBarcodeKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jBarcodeKeyPressed
+        // TODO add your handling code here:
+        if (evt.getKeyCode() == 27) {
+            dispose();
+        }
+    }//GEN-LAST:event_jBarcodeKeyPressed
 
     /**
      * @param args the command line arguments
@@ -309,12 +405,22 @@ public class XSiteStockCheck extends javax.swing.JDialog {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField jBarcode;
-    private javax.swing.JButton jBtnCancel;
+    private javax.swing.JTextField jBarcode2;
     private javax.swing.JButton jBtnCheck;
+    private javax.swing.JTextField jCategory;
+    private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel6;
+    private javax.swing.JTextField jPriceSellTaxed;
+    private javax.swing.JTextField jProductName;
+    private javax.swing.JCheckBox jRabatt;
+    private javax.swing.JTextField jReference;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JComboBox<String> jSiteList;
+    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTable jStockTable;
+    private javax.swing.JTextArea jTextArea1;
     // End of variables declaration//GEN-END:variables
 }
