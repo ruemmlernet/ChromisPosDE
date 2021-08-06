@@ -24,30 +24,43 @@
 package uk.chromis.pos.inventory;
 
 import java.awt.Component;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JPanel;
 import uk.chromis.basic.BasicException;
+import uk.chromis.data.gui.ComboBoxValModel;
+import uk.chromis.data.loader.SentenceList;
 import uk.chromis.data.user.DirtyManager;
 import uk.chromis.data.user.EditorRecord;
 import uk.chromis.format.Formats;
 import uk.chromis.pos.forms.AppLocal;
+import uk.chromis.pos.forms.DataLogicSales;
 
 public final class TaxCategoriesEditor extends JPanel implements EditorRecord {
 
     private Object m_oId;
     private String siteGuid;
+    private ComboBoxValModel taxcatmodel;
+    private SentenceList taxcatsent;
+    private final DataLogicSales m_dlSales;
 
     /**
      * Creates new form taxEditor
      *
      * @param dirty
      */
-    public TaxCategoriesEditor(DirtyManager dirty, String siteGuid) {
+    public TaxCategoriesEditor(DataLogicSales dlSales, DirtyManager dirty, String siteGuid) {
         initComponents();
 
         this.siteGuid = siteGuid;
+        m_dlSales = dlSales;
         m_jName.getDocument().addDocumentListener(dirty);
-        m_jTSECat.getDocument().addDocumentListener(dirty);
+        taxcatsent = dlSales.getTseTaxCategoriesList(siteGuid);
+        taxcatmodel = new ComboBoxValModel();
+        m_jTax.addActionListener(dirty);
 
         writeValueEOF();
     }
@@ -57,8 +70,8 @@ public final class TaxCategoriesEditor extends JPanel implements EditorRecord {
         m_oId = null;
         m_jName.setText(null);
         m_jName.setEnabled(false);
-        m_jTSECat.setText(null);
-        m_jTSECat.setEnabled(false);
+        taxcatmodel.setSelectedKey(null);
+        m_jTax.setEnabled(false);
     }
 
     @Override
@@ -66,8 +79,8 @@ public final class TaxCategoriesEditor extends JPanel implements EditorRecord {
         m_oId = UUID.randomUUID().toString();
         m_jName.setText(null);
         m_jName.setEnabled(true);
-        m_jTSECat.setText(null);
-        m_jTSECat.setEnabled(true);
+        taxcatmodel.setSelectedKey(null);
+        m_jTax.setEnabled(true);
     }
 
     @Override
@@ -77,8 +90,8 @@ public final class TaxCategoriesEditor extends JPanel implements EditorRecord {
         m_oId = taxcustcat[0];
         m_jName.setText(Formats.STRING.formatValue(taxcustcat[1]));
         m_jName.setEnabled(false);
-        m_jTSECat.setText(Formats.INT.formatValue(taxcustcat[3]));
-        m_jTSECat.setEnabled(false);
+        taxcatmodel.setSelectedKey(taxcustcat[3]);
+        m_jTax.setEnabled(false);
     }
 
     @Override
@@ -88,8 +101,8 @@ public final class TaxCategoriesEditor extends JPanel implements EditorRecord {
         m_oId = taxcustcat[0];
         m_jName.setText(Formats.STRING.formatValue(taxcustcat[1]));
         m_jName.setEnabled(true);
-        m_jTSECat.setText(Formats.INT.formatValue(taxcustcat[3]));
-        m_jTSECat.setEnabled(true);
+        taxcatmodel.setSelectedKey(taxcustcat[3]);
+        m_jTax.setEnabled(true);
         siteGuid = taxcustcat[2].toString();
     }
 
@@ -101,8 +114,7 @@ public final class TaxCategoriesEditor extends JPanel implements EditorRecord {
         taxcustcat[0] = m_oId;
         taxcustcat[1] = m_jName.getText();
         taxcustcat[2] = siteGuid;
-        taxcustcat[3] = Integer.parseInt(m_jTSECat.getText());
-
+        taxcustcat[3] = taxcatmodel.getSelectedKey();
         return taxcustcat;
     }
 
@@ -113,10 +125,20 @@ public final class TaxCategoriesEditor extends JPanel implements EditorRecord {
 
     @Override
     public void refresh() {
+        List a;
+        try {
+            a = taxcatsent.list();
+        } catch (BasicException ex) {
+            Logger.getLogger(TaxCategoriesEditor.class.getName()).log(Level.SEVERE, null, ex);
+            a = new ArrayList();
+        }
+        taxcatmodel = new ComboBoxValModel(a);
+        m_jTax.setModel(taxcatmodel);
     }
 
     @Override
     public void refreshGuid(String siteGuid) {
+        taxcatsent = m_dlSales.getTaxCategoriesList(siteGuid);
     }
 
     /**
@@ -132,9 +154,7 @@ public final class TaxCategoriesEditor extends JPanel implements EditorRecord {
         m_jName = new javax.swing.JTextField();
         jLabel3 = new javax.swing.JLabel();
         jLabel1 = new javax.swing.JLabel();
-        m_jTSECat = new javax.swing.JTextField();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        jTextArea1 = new javax.swing.JTextArea();
+        m_jTax = new javax.swing.JComboBox();
 
         jLabel2.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
         jLabel2.setText(AppLocal.getIntString("Label.Name")); // NOI18N
@@ -142,14 +162,9 @@ public final class TaxCategoriesEditor extends JPanel implements EditorRecord {
         m_jName.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
 
         jLabel3.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-        jLabel3.setText("TSE Category (1 - 5)");
+        jLabel3.setText("TSE Category");
 
-        jTextArea1.setEditable(false);
-        jTextArea1.setColumns(20);
-        jTextArea1.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-        jTextArea1.setRows(5);
-        jTextArea1.setText("1. Allgemeiner Steuersatz\n2. Ermäßigter Steuersatz\n3. Durchschnittsatz (§24(1)Nr. 3 UStG)\n4. Durchschnittsatz (§24(1)Nr. 1 UStG)\n5. 0%");
-        jScrollPane1.setViewportView(jTextArea1);
+        m_jTax.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -157,18 +172,17 @@ public final class TaxCategoriesEditor extends JPanel implements EditorRecord {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 126, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(14, 14, 14)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 126, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(m_jName, javax.swing.GroupLayout.PREFERRED_SIZE, 200, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(m_jTSECat, javax.swing.GroupLayout.PREFERRED_SIZE, 34, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addComponent(jScrollPane1))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 209, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(204, 204, 204)
+                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 209, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addComponent(m_jTax, 0, 240, Short.MAX_VALUE)
+                        .addComponent(m_jName)))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
@@ -179,18 +193,12 @@ public final class TaxCategoriesEditor extends JPanel implements EditorRecord {
                     .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(m_jName, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, 25, Short.MAX_VALUE)
-                    .addComponent(m_jTSECat))
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 13, Short.MAX_VALUE)
-                        .addComponent(jLabel1)
-                        .addGap(96, 96, 96))
-                    .addGroup(layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel3)
+                    .addComponent(m_jTax, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 13, Short.MAX_VALUE)
+                .addComponent(jLabel1)
+                .addGap(96, 96, 96))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -199,10 +207,8 @@ public final class TaxCategoriesEditor extends JPanel implements EditorRecord {
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
-    private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JTextArea jTextArea1;
     private javax.swing.JTextField m_jName;
-    private javax.swing.JTextField m_jTSECat;
+    private javax.swing.JComboBox m_jTax;
     // End of variables declaration//GEN-END:variables
 
 }

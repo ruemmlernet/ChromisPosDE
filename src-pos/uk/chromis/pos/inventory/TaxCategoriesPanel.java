@@ -72,11 +72,11 @@ public class TaxCategoriesPanel extends JPanelTable2 {
                 new Field("ID", Datas.STRING, Formats.STRING),
                 new Field("NAME", Datas.STRING, Formats.STRING, true, true, true),
                 new Field("SITEGUID", Datas.STRING, Formats.STRING),
-                new Field("TSE_TAXCAT", Datas.INT, Formats.INT)
+                new Field("TSE_TAXCAT", Datas.STRING, Formats.STRING)
         );
 
         lpr = new ListProviderCreator(new PreparedSentence(app.getSession(),
-                "SELECT ID, NAME, SITEGUID, TSE_TAXCAT "
+                "SELECT ID, NAME, SITEGUID, convert(TSE_TAXCAT, char) TSE_TAXCAT "
                 + "FROM TAXCATEGORIES "
                 + "WHERE SITEGUID = ? "
                 + "ORDER BY LOWER (NAME)",
@@ -92,10 +92,10 @@ public class TaxCategoriesPanel extends JPanelTable2 {
                 if (values[2] == null) {
                     // INSERT
                     values[2] = m_paramsSite.getSelectKey();
-                    return new PreparedSentence(app.getSession(), "INSERT INTO TAXCATEGORIES (ID, NAME, SITEGUID, TSE_TAXCAT) VALUES (?, ?, ?, ?)", new SerializerWriteBasicExt(row.getDatas(), new int[]{0, 1, 2, 3})).exec(params);
+                    return new PreparedSentence(app.getSession(), "INSERT INTO TAXCATEGORIES (ID, NAME, SITEGUID, TSE_TAXCAT) VALUES (?, ?, ?, convert(?, signed integer))", new SerializerWriteBasicExt(row.getDatas(), new int[]{0, 1, 2, 3})).exec(params);
                 } else {
                     // UPDATE
-                    return new PreparedSentence(app.getSession(), "UPDATE TAXCATEGORIES SET NAME = ?, TSE_TAXCAT = ? WHERE ID = ? AND SITEGUID = ? ", new SerializerWriteBasicExt(row.getDatas(), new int[]{1, 3, 0, 2})).exec(params);
+                    return new PreparedSentence(app.getSession(), "UPDATE TAXCATEGORIES SET NAME = ?, TSE_TAXCAT = convert(?, signed integer) WHERE ID = ? AND SITEGUID = ? ", new SerializerWriteBasicExt(row.getDatas(), new int[]{1, 3, 0, 2})).exec(params);
                 }
             }
         };
@@ -107,7 +107,7 @@ public class TaxCategoriesPanel extends JPanelTable2 {
                 // INSERT
                 values[0] = UUID.randomUUID().toString();
                 values[2] = m_paramsSite.getSelectKey();
-                return new PreparedSentence(app.getSession(), "INSERT INTO TAXCATEGORIES (ID, NAME, SITEGUID, TSE_TAXCAT) VALUES (?, ?, ?, ?)", new SerializerWriteBasicExt(row.getDatas(), new int[]{0, 1, 2, 3})).exec(params);
+                return new PreparedSentence(app.getSession(), "INSERT INTO TAXCATEGORIES (ID, NAME, SITEGUID, TSE_TAXCAT) VALUES (?, ?, ?, convert(?, signed integer))", new SerializerWriteBasicExt(row.getDatas(), new int[]{0, 1, 2, 3})).exec(params);
             }
         };
 
@@ -122,7 +122,7 @@ public class TaxCategoriesPanel extends JPanelTable2 {
 
         spr = new SaveProvider(updatesent, insertsent, deletesent);
 
-        jeditor = new TaxCategoriesEditor(dirty, dlSync.getSiteGuid());
+        jeditor = new TaxCategoriesEditor(dlSales, dirty, dlSync.getSiteGuid());
     }
 
     @Override
@@ -165,7 +165,7 @@ public class TaxCategoriesPanel extends JPanelTable2 {
                 dr.getString(1),
                 dr.getString(2),
                 dr.getString(3),
-                dr.getInt(4),
+                dr.getString(4),
                 ((Object[]) m_paramsSite.createValue())[1]
             };
         }
