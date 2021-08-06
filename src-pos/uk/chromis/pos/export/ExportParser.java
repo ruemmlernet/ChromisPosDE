@@ -22,13 +22,14 @@
  */
 package uk.chromis.pos.export;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -64,6 +65,8 @@ public class ExportParser extends DefaultHandler {
     private int inputKeyCount;
     private String[] xPfad;
     private String xmlPath;
+    private String[] xmlColumn;
+    private int xmlColumnCount;
     private int xPfadPos;
     private String efFormat;
     private String efFilename;
@@ -79,6 +82,8 @@ public class ExportParser extends DefaultHandler {
     private String[] mParams;
     private PrintWriter pwIndex;
     private String indexPuffer;
+    private String schemaFile;
+    private String schemaRessource;
     
     /**
      * Creates a new instance of ExportParser
@@ -119,6 +124,7 @@ public class ExportParser extends DefaultHandler {
         } else {
             doExport(new StringReader(res));
         }
+        
         return message;
     }
 
@@ -169,6 +175,26 @@ public class ExportParser extends DefaultHandler {
         return false;
     }
     
+    private void doExportSchema(String sIn, String efFile) {
+        String res = getResource(sIn);
+        if (!res.equals("")) {
+            // Datei zum Schreiben öffnen
+            PrintWriter pw = null;
+            try {
+                pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(mPfad + efFile), StandardCharsets.UTF_8), true );
+            } catch (IOException ex) {
+                Logger.getLogger(ExportParser.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            if (pw != null) {
+                pw.print(res + CSV_LINEDELIMITER);
+                // Datei schliessen
+                pw.flush();
+                pw.close();
+            }
+        }
+    }
+
+    
     private void setParams() {
         efSql = efSql.replace("&gt;", ">");
         efSql = efSql.replace("&lt;", "<");
@@ -198,7 +224,7 @@ public class ExportParser extends DefaultHandler {
             // Datei zum Schreiben öffnen
             PrintWriter pw = null;
             try {
-                pw = new PrintWriter(new BufferedWriter(new FileWriter(mPfad + efFilename)));
+                pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(mPfad + efFilename), StandardCharsets.UTF_8), true );
             } catch (IOException ex) {
                 Logger.getLogger(ExportParser.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -209,11 +235,11 @@ public class ExportParser extends DefaultHandler {
                 ResultSetMetaData rsmd = rs.getMetaData();
                 Integer cc = rsmd.getColumnCount();
                 line = "";
-                for (int i=1; i<=cc; i++) {
+                for (int i=1; i<=xmlColumnCount; i++) {
                     if (i == 1) {
-                        line = rsmd.getColumnName(i);
+                        line = xmlColumn[i];
                     } else {
-                        line = line.concat(CSV_COLUMNDELIMITER).concat(rsmd.getColumnName(i));
+                        line = line.concat(CSV_COLUMNDELIMITER).concat(xmlColumn[i]);
                     }
                 }
                 pw.print(line + CSV_LINEDELIMITER);
@@ -250,7 +276,7 @@ public class ExportParser extends DefaultHandler {
         // Datei zum Schreiben öffnen
         pwIndex = null;
         try {
-            pwIndex = new PrintWriter(new BufferedWriter(new FileWriter(mPfad + "index.xml")));
+            pwIndex = new PrintWriter(new OutputStreamWriter(new FileOutputStream(mPfad + "index.xml"), StandardCharsets.UTF_8), true );
         } catch (IOException ex) {
             Logger.getLogger(ExportParser.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -343,6 +369,8 @@ public class ExportParser extends DefaultHandler {
             case "export.exportfiles.exportfile.format":
             case "export.exportfiles.exportfile.createfilewithoutcontent":
             case "export.exportfiles.exportfile.sql":
+            case "export.exportschema.file":
+            case "export.exportschema.ressource":
                 text = new StringBuilder();
                 break;
             case "export.exportfiles.exportfile":
@@ -380,6 +408,8 @@ public class ExportParser extends DefaultHandler {
             case "export.exportfiles.exportfile.table.range":
             case "export.exportfiles.exportfile.table.variablelength":
                 pufferIndexFile(getXmlPathSpaces(3)+"<"+qName+">"+XML_LINEDELIMITER);
+                xmlColumn = new String[99];
+                xmlColumnCount = 0;
                 break;
             case "export.exportfiles.exportfile.table.url":
             case "export.exportfiles.exportfile.table.name":
@@ -477,9 +507,22 @@ public class ExportParser extends DefaultHandler {
                 pufferIndexFile("</"+qName+">"+XML_LINEDELIMITER);
                 break;
             case "export.exportfiles.exportfile.table.variablelength.variablecolumn.name":
+                pufferIndexFile(text.toString()+"</"+qName+">");
+                xmlColumnCount++;
+                xmlColumn[xmlColumnCount] = text.toString();
+                break;
             case "export.exportfiles.exportfile.table.variablelength.variablecolumn.description":
             case "export.exportfiles.exportfile.table.variablelength.variablecolumn.maxlength":
                 pufferIndexFile(text.toString()+"</"+qName+">");
+                break;
+            case "export.exportschema.file":
+                schemaFile = text.toString();
+                break;
+            case "export.exportschema.ressource":
+                schemaRessource = text.toString();
+                break;
+            case "export.exportschema":
+                doExportSchema(schemaRessource, schemaFile);
                 break;
         }
         decXmlPath();
