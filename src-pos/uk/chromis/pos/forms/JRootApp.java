@@ -292,16 +292,16 @@ public class JRootApp extends JPanel implements AppView {
         String newText = AppConfig.getInstance().getProperty("start.text");
         if (newText != null) {
             if (newText.equals("")) {
-                jLabel1.setText("<html><center>Chromis POS - The New Face of Open Source POS<br>"
+                jLabel1.setText("<html><center>Chromis POS DE - The New Face of Open Source POS<br>"
                         + "Copyright \u00A9 (c) 2015 - 2018 Chromis <br>"
                         + "<br>"
-                        + "http://www.chromis.co.uk<br>"
+                        + "http://www.ruemmler.net/chromis<br>"
                         + "<br>"
-                        + " Chromis POS is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.<br>"
+                        + "Chromis POS DE ist freie Software: Sie können sie unter den Bedingungen der GNU General Public License, wie sie von der Free Software Foundation veröffentlicht wurde, entweder Version 3 der Lizenz oder (nach Ihrer Wahl) jede spätere Version weitergeben und / oder ändern.<br>"
                         + "<br>"
-                        + " Chromis POS is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.<br>"
+                        + "Chromis POS DE wird in der Hoffnung verteilt, dass es nützlich sein wird, jedoch OHNE JEGLICHE GARANTIE; ohne die implizite Garantie der Marktgängigkeit oder Eignung für einen bestimmten Zweck. Weitere Informationen finden Sie in der GNU General Public License.<br>"
                         + "<br>"
-                        + "You should have received a copy of the GNU General Public License along with Chromis POS.  If not, see http://www.gnu.org/licenses/<br>"
+                        + "Sie sollten eine Kopie der GNU General Public License zusammen mit Chromis POS DE erhalten haben. Wenn nicht, siehe http://www.gnu.org/licenses/<br>"
                         + "</center>");
             } else {
                 try {
@@ -1061,7 +1061,7 @@ public class JRootApp extends JPanel implements AppView {
         model.addColumn("Value");
         model.addRow(new Object[]{"Database Version", readDataBaseVersion()});
         model.addRow(new Object[]{"Java Version", System.getProperty("java.version")});
-        model.addRow(new Object[]{"JavaFX Version", com.sun.javafx.runtime.VersionInfo.getRuntimeVersion()});
+//        model.addRow(new Object[]{"JavaFX Version", com.sun.javafx.runtime.VersionInfo.getRuntimeVersion()});
         model.addRow(new Object[]{"Operating System", System.getProperty("os.name")});
        // model.addRow(new Object[]{"Sync library", Sync.getVersion()});
         model.addRow(new Object[]{"Memory Used", ((runtime.totalMemory() - runtime.freeMemory()) / mb) + " MB"});

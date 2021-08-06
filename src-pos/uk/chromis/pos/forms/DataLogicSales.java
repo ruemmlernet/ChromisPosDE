@@ -38,7 +38,6 @@ import uk.chromis.pos.payment.PaymentInfoTicket;
 import uk.chromis.pos.ticket.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
@@ -46,7 +45,6 @@ import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import org.bouncycastle.util.encoders.Hex;
 import uk.chromis.pos.sync.DataLogicSync;
-import uk.chromis.pos.tse.TseInfo;
 import uk.chromis.pos.tse.TseProcessData;
 
 /**
@@ -78,6 +76,7 @@ public class DataLogicSales extends BeanFactoryDataSingle {
     private DataLogicSystem m_dlSystem;
     private Boolean isCentral = true;
     private SentenceExec m_updateRefund;
+    private SentenceExec m_getProductByCode;
     private SentenceExec m_refundStock;
     private SentenceExec m_addOrder;
 
@@ -306,7 +305,7 @@ public class DataLogicSales extends BeanFactoryDataSingle {
         m_dlSync = new DataLogicSync();
         m_dlSync.init(s);
         isCentral = m_dlSync.isCentral();
-
+        
         m_updateRefund = new StaticSentence(s, "UPDATE TICKETLINES SET REFUNDQTY = ? WHERE TICKET = ? AND LINE = ?  ", new SerializerWriteBasic(new Datas[]{
             Datas.DOUBLE,
             Datas.STRING,
@@ -977,6 +976,23 @@ public class DataLogicSales extends BeanFactoryDataSingle {
      *
      * @return
      */
+    public final SentenceList getTseTaxCategoriesList(String guid) {
+        return new StaticSentence(s, "select '1' id, '1: Allgemeiner Steuersatz' name " +
+                                     "union select '2', '2: Ermäßigter Steuersatz' " +
+                                     "union select '3', '3: Durchschnittsatz (§24(1)Nr. 3 UStG)' " +
+                                     "union select '4', '4: Durchschnittsatz (§24(1)Nr. 1 UStG)' " +
+                                     "union select '5', '5: 0%'", null, new SerializerRead() {
+            @Override
+            public Object readValues(DataRead dr) throws BasicException {
+                return new TaxCategoryInfo(dr.getString(1), dr.getString(2));
+            }
+        });
+    }
+
+    /**
+     *
+     * @return
+     */
     public final SentenceList getAttributeSetList() {
         return new StaticSentence(s, "SELECT "
                 + "ID, "
@@ -1264,7 +1280,7 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                         throw new BasicException();
                 }
 
-                new PreparedSentence(s, "INSERT INTO RECEIPTS (ID, MONEY, DATENEW, ATTRIBUTES, PERSON, TSE_LOGTIME_START, TSE_LOGTIME_END, TSE_SERIALNUMBER, TSE_SIGNATURECOUNTER, TSE_SIGNATUREVALUE, TSE_TRANSACTIONNUMBER, TSE_TIMEFORMAT, TSE_HASHALGORYTHMUS, TSE_STATUS, TSE_PUBLICKEY, GV_TYP) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", SerializerWriteParams.INSTANCE
+                new PreparedSentence(s, "INSERT INTO RECEIPTS (ID, MONEY, DATENEW, ATTRIBUTES, PERSON, TSE_LOGTIME_START, TSE_LOGTIME_END, TSE_SERIALNUMBER, TSE_SIGNATURECOUNTER, TSE_SIGNATUREVALUE, TSE_TRANSACTIONNUMBER, TSE_TIMEFORMAT, TSE_HASHALGORYTHMUS, TSE_STATUS, TSE_PUBLICKEY, GV_TYP, VORGANGSTYP) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", SerializerWriteParams.INSTANCE
                 ).exec(new DataParams() {
                     @Override
                     public void writeValues() throws BasicException {
@@ -1290,12 +1306,13 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                         setString(14, ticket.getTseStatus());
                         setString(15, ticket.getTsePublicKey());
                         setString(16, "Umsatz");
+                        setString(17, "Beleg");
                     }
                 }
                 );
 
                 // new ticket
-                new PreparedSentence(s, "INSERT INTO TICKETS (ID, TICKETTYPE, TICKETID, PERSON, CUSTOMER) VALUES (?, ?, ?, ?, ?)", SerializerWriteParams.INSTANCE
+                new PreparedSentence(s, "INSERT INTO TICKETS (ID, TICKETTYPE, TICKETID, PERSON, CUSTOMER, ABRKREIS) VALUES (?, ?, ?, ?, ?, ?)", SerializerWriteParams.INSTANCE
                 ).exec(new DataParams() {
                     @Override
                     public void writeValues() throws BasicException {
@@ -1304,6 +1321,7 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                         setInt(3, ticket.getTicketId());
                         setString(4, ticket.getUser().getId());
                         setString(5, ticket.getCustomerId());
+                        setString(6, ticket.getAbrechnungskreis());
                     }
                 }
                 );
@@ -1438,7 +1456,7 @@ public class DataLogicSales extends BeanFactoryDataSingle {
             @Override
             public Object transact() throws BasicException {
 
-                new PreparedSentence(s, "INSERT INTO RECEIPTS (ID, MONEY, DATENEW, ATTRIBUTES, PERSON, TSE_LOGTIME_START, TSE_LOGTIME_END, TSE_SERIALNUMBER, TSE_SIGNATURECOUNTER, TSE_SIGNATUREVALUE, TSE_TRANSACTIONNUMBER, TSE_TIMEFORMAT, TSE_HASHALGORYTHMUS, TSE_STATUS, TSE_PUBLICKEY, GV_TYP) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", SerializerWriteParams.INSTANCE
+                new PreparedSentence(s, "INSERT INTO RECEIPTS (ID, MONEY, DATENEW, ATTRIBUTES, PERSON, TSE_LOGTIME_START, TSE_LOGTIME_END, TSE_SERIALNUMBER, TSE_SIGNATURECOUNTER, TSE_SIGNATUREVALUE, TSE_TRANSACTIONNUMBER, TSE_TIMEFORMAT, TSE_HASHALGORYTHMUS, TSE_STATUS, TSE_PUBLICKEY, GV_TYP, VORGANGSTYP) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", SerializerWriteParams.INSTANCE
                 ).exec(new DataParams() {
                     @Override
                     public void writeValues() throws BasicException {
@@ -1464,6 +1482,7 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                         setString(14, ticket.getTseStatus());
                         setString(15, ticket.getTsePublicKey());
                         setString(16, "Umsatz");
+                        setString(17, "AVBelegabbruch");
                     }
                 }
                 );
@@ -1476,7 +1495,7 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                         setString(2, ticket.getId());
                         setString(3, "cash");
                         setDouble(4, 0.0);
-                        setString(5, "AVBelegabbruch");
+                        setString(5, "");
                     }
                 }
                 );
@@ -1491,7 +1510,7 @@ public class DataLogicSales extends BeanFactoryDataSingle {
      * @param ticket
      * @param location
      * @throws BasicException
-     */
+     */   /***
     public final void deleteTicket(final TicketInfo ticket, final String location) throws BasicException {
 
         Transaction t = new Transaction(s) {
@@ -1548,6 +1567,7 @@ public class DataLogicSales extends BeanFactoryDataSingle {
         };
         t.execute();
     }
+    * */
 
     /**
      *
@@ -1934,7 +1954,7 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                         params2[15] = "";
                         params2[16] = "TSE-Ausfall";
                         params2[17] = "";
-                        JOptionPane.showMessageDialog(null, "Störung der TSE !!!\r\n\r\nBitte umgehend den Kassenverantwortlichen Informieren !!!", 
+                        JOptionPane.showMessageDialog(null, "Störung der TSE !!!\r\n\r\nBitte umgehend den Kassenverantwortlichen informieren !!!", 
                                                       "Warnung", JOptionPane.WARNING_MESSAGE);
                     }
                 } else {
@@ -1950,10 +1970,9 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                     params2[16] = "";
                     params2[17] = "";
                 }
-                
                     
                 new PreparedSentence(s, "INSERT INTO RECEIPTS (ID, MONEY, DATENEW, GV_TYP, TSE_LOGTIME_START, TSE_LOGTIME_END, TSE_SERIALNUMBER, TSE_SIGNATURECOUNTER, " + 
-                                        "TSE_SIGNATUREVALUE, TSE_TRANSACTIONNUMBER, TSE_TIMEFORMAT, TSE_HASHALGORYTHMUS, TSE_STATUS, TSE_PUBLICKEY, PERSON) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+                                        "TSE_SIGNATUREVALUE, TSE_TRANSACTIONNUMBER, TSE_TIMEFORMAT, TSE_HASHALGORYTHMUS, TSE_STATUS, TSE_PUBLICKEY, PERSON, VORGANGSTYP) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Beleg')", 
                                      new SerializerWriteBasicExt(paymenttabledatas, new int[]{0, 1, 2, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18})).exec(params2);
                 
                 new PreparedSentence(s, "INSERT INTO TICKETS (ID, TICKETTYPE, TICKETID, PERSON, STATUS) VALUES (?, 3, ?, ?, 0)", 

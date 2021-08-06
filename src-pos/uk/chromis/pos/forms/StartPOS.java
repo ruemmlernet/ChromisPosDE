@@ -223,9 +223,19 @@ public class StartPOS {
                 if (!tseStatus.equals("")) {
                     JOptionPane.showMessageDialog(null, tseStatus);
                 }
-                if (AppConfig.getTse().getOpenTransactions().length > 0) {
-                    JOptionPane.showMessageDialog(null, "TSE-Transaktionen offen!");
-                }
+                
+                
+                
+                
+                
+//                if (AppConfig.getTse().getOpenTransactions().length > 0) {
+//                    JOptionPane.showMessageDialog(null, "TSE-Transaktionen offen!");
+//                }
+                
+                
+                
+                
+                
             } catch (BasicException ex) {
                 Logger.getLogger(StartPOS.class.getName()).log(Level.SEVERE, null, ex);
             }
